@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Scanner Presensi Wisuda MA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    #reader video {
+      border-radius: 1rem !important;
+      object-fit: cover !important;
+    }
+    #reader__scan_region {
+      background: transparent !important;
+    }
+    #reader__dashboard_section_csr span,
+    #reader__dashboard_section_swaplink {
+      display: none !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between select-none">
+
+  <!-- HEADER ATAS -->
+  <header class="bg-emerald-900 px-4 py-3.5 shadow-lg flex items-center justify-between border-b border-emerald-700">
+    <div class="flex items-center gap-2.5">
+      <img src="https://lh3.googleusercontent.com/d/1zSJYgI4-5bk-mKUnHFV6o_U5h0FgiR_T" alt="Logo" class="w-9 h-9 object-contain bg-white rounded-xl p-0.5">
+      <div>
+        <h1 class="font-bold text-sm leading-tight">Scanner Presensi Wisuda</h1>
+        <p id="lblInfoPos" class="text-[11px] text-emerald-300">Belum terhubung</p>
+      </div>
+    </div>
+    <button onclick="bukaPengaturan()" title="Pengaturan Koneksi" class="p-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600">
+      <i class="fa-solid fa-gear"></i>
+    </button>
+  </header>
+
+  <!-- LAYAR 1: FORM PENGATURAN KONEKSI (MUNCUL PERTAMA KALI) -->
+  <main id="layarSetup" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white text-slate-800 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="text-center space-y-1">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-link"></i>
+        </div>
+        <h2 class="font-bold text-lg text-slate-900">Hubungkan ke Sistem Wisuda</h2>
+        <p class="text-xs text-slate-500">Pengaturan ini cukup diisi 1 kali dan tersimpan otomatis di HP petugas.</p>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">URL Web App Google Apps Script *</label>
+          <input type="url" id="inpGasUrl" placeholder="https://script.google.com/macros/s/.../exec"
+            class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-600 font-mono text-[11px]">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">PIN Panitia *</label>
+          <input type="password" id="inpPin" placeholder="Masukkan PIN Panitia"
+            class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-600">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nama Pos / Pintu Masuk *</label>
+          <input type="text" id="inpPos" placeholder="Contoh: Pos Pintu Putra"
+            class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-600">
+        </div>
+      </div>
+
+      <button id="btnSimpanKoneksi" onclick="simpanDanHubungkan()"
+        class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+        <i class="fa-solid fa-camera"></i> Simpan & Buka Kamera Scanner
+      </button>
+    </div>
+  </main>
+
+  <!-- LAYAR 2: KAMERA SCANNER LIVE -->
+  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-4">
+    
+    <!-- Kotak Kamera -->
+    <div class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative">
+      <div id="reader" class="w-full"></div>
+      <div id="overlayLoading" class="hidden absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center gap-2 z-10">
+        <i class="fa-solid fa-spinner fa-spin text-3xl text-amber-400"></i>
+        <p class="text-xs font-bold text-white">Memverifikasi QR Code...</p>
+      </div>
+    </div>
+
+    <!-- Mode Scan Cepat (Otomatis vs Manual) -->
+    <div class="w-full max-w-sm bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
+      <div>
+        <p class="text-xs font-bold text-white">Mode Scan Kilat (Auto-Hadir)</p>
+        <p class="text-[10px] text-slate-400">Otomatis catat hadir (2 wali) tanpa klik konfirmasi</p>
+      </div>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" id="chkAutoConfirm" class="sr-only peer">
+        <div class="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+      </label>
+    </div>
+
+    <p class="text-xs text-slate-400 text-center max-w-xs">
+      Arahkan kamera ke <b>QR Code Undangan</b> wisudawan. Pastikan pencahayaan cukup.
+    </p>
+  </main>
+
+  <!-- MODAL HASIL SCAN & KONFIRMASI -->
+  <div id="modalHasilScan" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-3">
+    <div class="bg-white text-slate-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-bounce-once">
+      
+      <!-- Banner Status Atas Modal -->
+      <div id="modalBanner" class="bg-emerald-600 text-white px-5 py-3.5 text-center">
+        <h3 id="modalStatusJudul" class="font-extrabold text-sm uppercase tracking-wide">-</h3>
+        <p id="modalStatusSub" class="text-[11px] opacity-90">-</p>
+      </div>
+
+      <!-- Konten Biodata Siswa -->
+      <div id="modalBodySiswa" class="p-5 space-y-4">
+        <div class="flex items-center gap-4">
+          <img id="resFoto" src="" class="w-20 h-24 object-cover object-top rounded-xl border border-slate-300 bg-slate-100 flex-shrink-0">
+          <div class="min-w-0">
+            <span id="resKelas" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">-</span>
+            <h4 id="resNama" class="font-bold text-base text-slate-900 leading-snug mt-1">-</h4>
+            <p id="resNisn" class="text-xs text-slate-500 font-mono">-</p>
+            <p class="text-xs text-slate-700 mt-1 truncate">Wali: <b id="resWali">-</b></p>
+          </div>
+        </div>
+
+        <!-- Nomor Kursi -->
+        <div class="grid grid-cols-2 gap-2.5 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+          <div>
+            <span class="block text-[10px] font-bold text-slate-500 uppercase">Kursi Siswa</span>
+            <span id="resKursiSiswa" class="block text-xl font-black text-emerald-800">-</span>
+          </div>
+          <div>
+            <span class="block text-[10px] font-bold text-slate-500 uppercase">Kursi Wali</span>
+            <span id="resKursiWali" class="block text-xl font-black text-blue-800">-</span>
+          </div>
+        </div>
+
+        <!-- Pilihan Jumlah Wali (Muncul jika status VALID & bukan auto-confirm) -->
+        <div id="blokPilihWali" class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Jumlah Orang Tua / Wali Hadir:</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="setWali(1, this)" class="btn-wali py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700">1 Orang</button>
+              <button type="button" onclick="setWali(2, this)" class="btn-wali py-2 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-xs font-bold text-emerald-800">2 Orang</button>
+              <button type="button" onclick="setWali(0, this)" class="btn-wali py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700">Tanpa Wali</button>
+            </div>
+          </div>
+
+          <button id="btnConfirmModal" onclick="kirimKonfirmasiHadir()"
+            class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2">
+            <i class="fa-solid fa-check-double"></i> KONFIRMASI KEHADIRAN
+          </button>
+        </div>
+      </div>
+
+      <!-- Tombol Tutup & Lanjut Scan -->
+      <div class="p-4 bg-slate-100 border-t border-slate-200">
+        <button onclick="tutupModalDanLanjutScan()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-3 rounded-xl">
+          <i class="fa-solid fa-qrcode mr-1"></i> Scan Wisudawan Berikutnya
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let html5QrCode = null;
+    let sedangMemproses = false;
+    let siswaAktif = null;
+    let jmlWaliDipilih = 2;
+
+    // Suara Beep Sederhana Tanpa File Eksternal
+    function bunyiBeep(frekuensi = 880, durasi = 150) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = frekuensi;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, durasi);
+      } catch (e) {}
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // Ambil parameter URL jika dibagikan via link (?url=...&pin=...&pos=...)
+      const params = new URLSearchParams(window.location.search);
+      const savedUrl = params.get('url') || localStorage.getItem('gh_gas_url') || '';
+      const savedPin = params.get('pin') || localStorage.getItem('gh_gas_pin') || '';
+      const savedPos = params.get('pos') || localStorage.getItem('gh_gas_pos') || '';
+
+      document.getElementById('inpGasUrl').value = savedUrl;
+      document.getElementById('inpPin').value = savedPin;
+      document.getElementById('inpPos').value = savedPos;
+
+      if (savedUrl && savedPin) {
+        aktifkanTampilanScanner(savedPos || 'Petugas Pintu');
+      }
+    });
+
+    async function simpanDanHubungkan() {
+      const url = document.getElementById('inpGasUrl').value.trim();
+      const pin = document.getElementById('inpPin').value.trim();
+      const pos = document.getElementById('inpPos').value.trim() || 'Petugas Pintu';
+
+      if (!url || !pin) {
+        alert('URL Web App GAS dan PIN Panitia wajib diisi!');
+        return;
+      }
+
+      const btn = document.getElementById('btnSimpanKoneksi');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
+
+      try {
+        const res = await panggilApiGas(url, { action: 'auth', pin: pin });
+        if (res.sukses) {
+          localStorage.setItem('gh_gas_url', url);
+          localStorage.setItem('gh_gas_pin', pin);
+          localStorage.setItem('gh_gas_pos', pos);
+          aktifkanTampilanScanner(pos);
+        } else {
+          alert(res.pesan || 'PIN Panitia salah!');
+        }
+      } catch (err) {
+        alert('Gagal terhubung ke Google Apps Script. Pastikan URL Web App benar dan sudah di-Deploy untuk "Siapa saja (Anyone)".');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-camera"></i> Simpan & Buka Kamera Scanner';
+      }
+    }
+
+    function bukaPengaturan() {
+      hentikanKamera();
+      document.getElementById('layarScanner').classList.add('hidden');
+      document.getElementById('layarSetup').classList.remove('hidden');
+    }
+
+    function aktifkanTampilanScanner(namaPos) {
+      document.getElementById('lblInfoPos').innerText = 'Aktif: ' + namaPos;
+      document.getElementById('layarSetup').classList.add('hidden');
+      document.getElementById('layarScanner').classList.remove('hidden');
+      mulaiKamera();
+    }
+
+    function mulaiKamera() {
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+      sedangMemproses = false;
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 230, height: 230 } },
+        onScanBerhasil,
+        () => {}
+      ).catch(err => {
+        alert("Kamera tidak dapat diakses. Pastikan izin kamera diizinkan pada browser HP Anda.");
+      });
+    }
+
+    function hentikanKamera() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(() => {});
+      }
+    }
+
+    async function onScanBerhasil(decodedText) {
+      if (sedangMemproses) return;
+      sedangMemproses = true;
+      bunyiBeep(950, 120);
+
+      // Jeda kamera sementara memproses data
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.pause(true);
+      }
+      document.getElementById('overlayLoading').classList.remove('hidden');
+
+      const url = localStorage.getItem('gh_gas_url');
+      const pin = localStorage.getItem('gh_gas_pin');
+      const pos = localStorage.getItem('gh_gas_pos');
+      const isAuto = document.getElementById('chkAutoConfirm').checked;
+
+      try {
+        const res = await panggilApiGas(url, {
+          action: 'cek',
+          pin: pin,
+          qrText: decodedText
+        });
+
+        document.getElementById('overlayLoading').classList.add('hidden');
+
+        if (!res.sukses) {
+          tampilkanModalError(res.pesan);
+          return;
+        }
+
+        const data = res.data;
+        if (data.status === 'NOT_FOUND' || data.status === 'ERROR') {
+          bunyiBeep(300, 350);
+          tampilkanModalError(data.pesan);
+          return;
+        }
+
+        siswaAktif = data;
+
+        // Jika Mode Scan Kilat aktif dan siswa belum hadir -> langsung simpan hadir!
+        if (isAuto && data.status === 'VALID') {
+          document.getElementById('overlayLoading').classList.remove('hidden');
+          const resSimpan = await panggilApiGas(url, {
+            action: 'simpan',
+            id_siswa: data.id_siswa,
+            jml_wali: 2,
+            nama_petugas: pos,
+            pin: pin
+          });
+          document.getElementById('overlayLoading').classList.add('hidden');
+
+          if (resSimpan.sukses) {
+            bunyiBeep(1200, 200);
+            tampilkanModalSiswa(data, 'AUTO_SUKSES');
+          } else {
+            bunyiBeep(300, 350);
+            tampilkanModalError(resSimpan.pesan);
+          }
+        } else {
+          tampilkanModalSiswa(data, data.status);
+        }
+
+      } catch (err) {
+        document.getElementById('overlayLoading').classList.add('hidden');
+        tampilkanModalError('Koneksi terputus saat memeriksa QR Code.');
+      }
+    }
+
+    function tampilkanModalSiswa(data, modeStatus) {
+      const banner = document.getElementById('modalBanner');
+      const judul = document.getElementById('modalStatusJudul');
+      const sub = document.getElementById('modalStatusSub');
+      const blokWali = document.getElementById('blokPilihWali');
+      document.getElementById('modalBodySiswa').classList.remove('hidden');
+
+      document.getElementById('resFoto').src = data.url_foto;
+      document.getElementById('resKelas').innerText = data.kelas;
+      document.getElementById('resNama').innerText = data.nama_lengkap;
+      document.getElementById('resNisn').innerText = 'NISN: ' + data.nisn;
+      document.getElementById('resWali').innerText = data.nama_wali;
+      document.getElementById('resKursiSiswa').innerText = data.kursi_siswa;
+      document.getElementById('resKursiWali').innerText = data.kursi_wali;
+
+      if (modeStatus === 'SUDAH_HADIR') {
+        bunyiBeep(400, 300);
+        banner.className = 'bg-amber-500 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> SUDAH MELAKUKAN PRESENSI';
+        sub.innerText = `Tercatat pukul ${data.waktu_presensi} (${data.petugas_scan})`;
+        blokWali.classList.add('hidden');
+      } else if (modeStatus === 'AUTO_SUKSES') {
+        banner.className = 'bg-emerald-600 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> PRESENSI BERHASIL (SCAN KILAT)';
+        sub.innerText = 'Kehadiran wisudawan & 2 wali otomatis tercatat';
+        blokWali.classList.add('hidden');
+      } else {
+        banner.className = 'bg-blue-700 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-qrcode mr-1"></i> DATA WISUDAWAN VALID';
+        sub.innerText = 'Silakan konfirmasi jumlah wali yang hadir';
+        blokWali.classList.remove('hidden');
+        jmlWaliDipilih = 2;
+      }
+
+      document.getElementById('modalHasilScan').classList.remove('hidden');
+    }
+
+    function tampilkanModalError(pesan) {
+      const banner = document.getElementById('modalBanner');
+      banner.className = 'bg-rose-600 text-white px-5 py-4 text-center';
+      document.getElementById('modalStatusJudul').innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i> SCAN DITOLAK';
+      document.getElementById('modalStatusSub').innerText = pesan;
+      document.getElementById('modalBodySiswa').classList.add('hidden');
+      document.getElementById('modalHasilScan').classList.remove('hidden');
+    }
+
+    function setWali(jml, btn) {
+      jmlWaliDipilih = jml;
+      document.querySelectorAll('.btn-wali').forEach(b => {
+        b.className = 'btn-wali py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-700';
+      });
+      btn.className = 'btn-wali py-2 rounded-xl border-2 border-emerald-600 bg-emerald-50 text-xs font-bold text-emerald-800';
+    }
+
+    async function kirimKonfirmasiHadir() {
+      if (!siswaAktif) return;
+      const btn = document.getElementById('btnConfirmModal');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+      const url = localStorage.getItem('gh_gas_url');
+      const pin = localStorage.getItem('gh_gas_pin');
+      const pos = localStorage.getItem('gh_gas_pos');
+
+      try {
+        const res = await panggilApiGas(url, {
+          action: 'simpan',
+          id_siswa: siswaAktif.id_siswa,
+          jml_wali: jmlWaliDipilih,
+          nama_petugas: pos,
+          pin: pin
+        });
+
+        if (res.sukses) {
+          bunyiBeep(1200, 200);
+          document.getElementById('modalBanner').className = 'bg-emerald-600 text-white px-5 py-3.5 text-center';
+          document.getElementById('modalStatusJudul').innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> KEHADIRAN TERCATAT!';
+          document.getElementById('modalStatusSub').innerText = `Wisudawan + ${jmlWaliDipilih} Wali berhasil disimpan`;
+          document.getElementById('blokPilihWali').classList.add('hidden');
+        } else {
+          alert(res.pesan);
+        }
+      } catch (err) {
+        alert('Gagal menyimpan data presensi.');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> KONFIRMASI KEHADIRAN';
+      }
+    }
+
+    function tutupModalDanLanjutScan() {
+      document.getElementById('modalHasilScan').classList.add('hidden');
+      siswaAktif = null;
+      sedangMemproses = false;
+      if (html5QrCode) {
+        try { html5QrCode.resume(); } catch (e) { mulaiKamera(); }
+      }
+    }
+
+    // Menggunakan text/plain agar terhindar dari blokir CORS preflight Google Apps Script
+    async function panggilApiGas(url, payload) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
+    }
+  </script>
+</body>
+</html>
