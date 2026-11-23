@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Scanner Presensi Wisuda MA</title>
+  <title>Scanner Presensi Wisuda MA (Offline-Ready)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -24,7 +24,7 @@
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between select-none">
 
   <!-- HEADER ATAS -->
-  <header class="bg-emerald-900 px-4 py-3.5 shadow-lg flex items-center justify-between border-b border-emerald-700">
+  <header class="bg-emerald-900 px-4 py-3 shadow-lg flex items-center justify-between border-b border-emerald-700">
     <div class="flex items-center gap-2.5">
       <img src="https://lh3.googleusercontent.com/d/1zSJYgI4-5bk-mKUnHFV6o_U5h0FgiR_T" alt="Logo" class="w-9 h-9 object-contain bg-white rounded-xl p-0.5">
       <div>
@@ -32,9 +32,14 @@
         <p id="lblInfoPos" class="text-[11px] text-emerald-300">Belum terhubung</p>
       </div>
     </div>
-    <button onclick="bukaPengaturan()" title="Pengaturan Koneksi" class="p-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600">
-      <i class="fa-solid fa-gear"></i>
-    </button>
+    <div class="flex items-center gap-2">
+      <span id="badgeNetwork" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
+        <i class="fa-solid fa-wifi mr-1"></i> Online
+      </span>
+      <button onclick="bukaPengaturan()" title="Pengaturan Koneksi" class="p-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600">
+        <i class="fa-solid fa-gear"></i>
+      </button>
+    </div>
   </header>
 
   <!-- LAYAR 1: FORM PENGATURAN KONEKSI -->
@@ -45,7 +50,7 @@
           <i class="fa-solid fa-link"></i>
         </div>
         <h2 class="font-bold text-lg text-slate-900">Hubungkan ke Sistem Wisuda</h2>
-        <p class="text-xs text-slate-500">Pengaturan ini cukup diisi 1 kali dan tersimpan otomatis di HP petugas.</p>
+        <p class="text-xs text-slate-500">Data seluruh wisudawan akan otomatis diunduh ke HP ini agar tetap berjalan lancar meski sinyal gedung terputus.</p>
       </div>
 
       <div class="space-y-3 text-xs">
@@ -70,19 +75,34 @@
 
       <button id="btnSimpanKoneksi" onclick="simpanDanHubungkan()"
         class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-        <i class="fa-solid fa-camera"></i> Simpan & Buka Kamera Scanner
+        <i class="fa-solid fa-cloud-arrow-down"></i> Unduh Data & Buka Kamera
       </button>
     </div>
   </main>
 
   <!-- LAYAR 2: KAMERA SCANNER LIVE -->
-  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-3.5">
+  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-3">
     
+    <!-- BAR STATUS DATABASE OFFLINE & ANTREAN SYNC -->
+    <div class="w-full max-w-sm bg-slate-800/90 border border-slate-700 rounded-2xl p-3 flex items-center justify-between gap-2 text-xs">
+      <div class="space-y-0.5">
+        <p class="font-bold text-slate-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-database text-emerald-400"></i>
+          <span id="lblCacheCount">Cache Offline: 0 Siswa</span>
+        </p>
+        <p id="lblQueueStatus" class="text-[11px] text-slate-400">Semua data tersinkronisasi</p>
+      </div>
+      <button id="btnSyncManual" onclick="sinkronkanSekarang(true)"
+        class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] py-2 px-3 rounded-xl flex items-center gap-1.5 flex-shrink-0 transition">
+        <i class="fa-solid fa-rotate"></i> Sync
+      </button>
+    </div>
+
     <!-- Kotak Kamera -->
-    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[280px] flex items-center justify-center">
+    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[270px] flex items-center justify-center">
       <div id="reader" class="w-full"></div>
 
-      <!-- Tampilan Placeholder Saat Kamera Dimatikan -->
+      <!-- Placeholder Kamera Mati -->
       <div id="placeholderKameraMati" class="hidden p-8 text-center space-y-2.5">
         <div class="w-16 h-16 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mx-auto text-2xl border border-slate-700">
           <i class="fa-solid fa-video-slash"></i>
@@ -110,7 +130,7 @@
       </button>
     </div>
 
-    <!-- Mode Scan Cepat (Otomatis vs Manual) -->
+    <!-- Mode Scan Cepat -->
     <div class="w-full max-w-sm bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
       <div>
         <p class="text-xs font-bold text-white">Mode Scan Kilat (Auto-Hadir)</p>
@@ -122,9 +142,6 @@
       </label>
     </div>
 
-    <p class="text-[11px] text-slate-400 text-center max-w-xs">
-      Jaga jarak kamera sekitar <b>15–20 cm</b> dari kertas undangan agar fokus QR tajam.
-    </p>
   </main>
 
   <!-- MODAL HASIL SCAN & KONFIRMASI -->
@@ -187,6 +204,7 @@
   <script>
     let html5QrCode = null;
     let sedangMemproses = false;
+    let sedangSync = false;
     let kameraAktif = false;
     let senterAktif = false;
     let siswaAktif = null;
@@ -206,6 +224,56 @@
       } catch (e) {}
     }
 
+    // MANAJEMEN CACHE DATABASE & ANTREAN OFFLINE
+    function getMasterCache() {
+      return JSON.parse(localStorage.getItem('gh_master_siswa') || '[]');
+    }
+
+    function setMasterCache(list) {
+      localStorage.setItem('gh_master_siswa', JSON.stringify(list || []));
+      perbaruiInfoStatusOffline();
+    }
+
+    function getOfflineQueue() {
+      return JSON.parse(localStorage.getItem('gh_offline_queue') || '[]');
+    }
+
+    function setOfflineQueue(q) {
+      localStorage.setItem('gh_offline_queue', JSON.stringify(q || []));
+      perbaruiInfoStatusOffline();
+    }
+
+    function perbaruiInfoStatusOffline() {
+      const cache = getMasterCache();
+      const queue = getOfflineQueue();
+      const badgeNet = document.getElementById('badgeNetwork');
+      const lblCache = document.getElementById('lblCacheCount');
+      const lblQueue = document.getElementById('lblQueueStatus');
+
+      if (navigator.onLine) {
+        badgeNet.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40';
+        badgeNet.innerHTML = '<i class="fa-solid fa-wifi mr-1"></i> Online';
+      } else {
+        badgeNet.className = 'text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-500 text-slate-950';
+        badgeNet.innerHTML = '<i class="fa-solid fa-plane-slash mr-1"></i> Mode Offline';
+      }
+
+      lblCache.innerText = `Cache Offline: ${cache.length} Siswa`;
+      if (queue.length > 0) {
+        lblQueue.className = 'text-[11px] font-bold text-amber-300';
+        lblQueue.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${queue.length} data menunggu dikirim ke server`;
+      } else {
+        lblQueue.className = 'text-[11px] text-slate-400';
+        lblQueue.innerText = 'Semua data tersinkronisasi';
+      }
+    }
+
+    window.addEventListener('online', () => {
+      perbaruiInfoStatusOffline();
+      sinkronkanSekarang(false);
+    });
+    window.addEventListener('offline', perbaruiInfoStatusOffline);
+
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const savedUrl = params.get('url') || localStorage.getItem('gh_gas_url') || '';
@@ -216,9 +284,22 @@
       document.getElementById('inpPin').value = savedPin;
       document.getElementById('inpPos').value = savedPos;
 
+      perbaruiInfoStatusOffline();
+
       if (savedUrl && savedPin) {
         aktifkanTampilanScanner(savedPos || 'Petugas Pintu');
+        // Sinkronisasi latar belakang saat halaman dibuka
+        if (navigator.onLine) {
+          sinkronkanSekarang(false);
+        }
       }
+
+      // Cek sinkronisasi otomatis setiap 15 detik jika ada antrean offline
+      setInterval(() => {
+        if (navigator.onLine && getOfflineQueue().length > 0) {
+          sinkronkanSekarang(false);
+        }
+      }, 15000);
     });
 
     async function simpanDanHubungkan() {
@@ -233,23 +314,84 @@
 
       const btn = document.getElementById('btnSimpanKoneksi');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengunduh Database...';
 
       try {
-        const res = await panggilApiGas(url, { action: 'auth', pin: pin });
+        const res = await panggilApiGas(url, { action: 'auth', pin: pin }, 8000);
         if (res.sukses) {
           localStorage.setItem('gh_gas_url', url);
           localStorage.setItem('gh_gas_pin', pin);
           localStorage.setItem('gh_gas_pos', pos);
+          if (res.masterSiswa) {
+            setMasterCache(res.masterSiswa);
+          }
           aktifkanTampilanScanner(pos);
         } else {
           alert(res.pesan || 'PIN Panitia salah!');
         }
       } catch (err) {
-        alert('Gagal terhubung ke Google Apps Script. Pastikan URL Web App benar dan sudah di-Deploy untuk "Siapa saja (Anyone)".');
+        // Jika HP sedang offline tapi sudah punya cache lokal sebelumnya, tetap izinkan masuk
+        if (getMasterCache().length > 0 && localStorage.getItem('gh_gas_pin') === pin) {
+          aktifkanTampilanScanner(pos);
+        } else {
+          alert('Gagal terhubung ke Google Apps Script. Pastikan internet aktif saat menghubungkan pertama kali.');
+        }
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-camera"></i> Simpan & Buka Kamera Scanner';
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> Unduh Data & Buka Kamera';
+      }
+    }
+
+    // SINKRONISASI ANTREAN OFFLINE + REFRESH CACHE DATABASE
+    async function sinkronkanSekarang(tampilkanNotif) {
+      if (sedangSync) return;
+      const url = localStorage.getItem('gh_gas_url');
+      const pin = localStorage.getItem('gh_gas_pin');
+      if (!url || !pin) return;
+
+      if (!navigator.onLine) {
+        if (tampilkanNotif) alert('HP sedang offline. Data akan otomatis dikirim saat sinyal internet kembali.');
+        return;
+      }
+
+      sedangSync = true;
+      const btn = document.getElementById('btnSyncManual');
+      if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+      try {
+        const queue = getOfflineQueue();
+        if (queue.length > 0) {
+          const resBatch = await panggilApiGas(url, {
+            action: 'sync_batch',
+            pin: pin,
+            items: queue
+          }, 12000);
+
+          if (resBatch.sukses) {
+            setOfflineQueue([]);
+            if (resBatch.masterSiswa) setMasterCache(resBatch.masterSiswa);
+            if (tampilkanNotif) {
+              alert(`Sinkronisasi selesai! Terkirim: ${resBatch.berhasil} data, dilewati (sudah tercatat): ${resBatch.dilewati}.`);
+            }
+          }
+        } else {
+          const resMaster = await panggilApiGas(url, {
+            action: 'sync_master',
+            pin: pin
+          }, 8000);
+          if (resMaster.sukses && resMaster.masterSiswa) {
+            setMasterCache(resMaster.masterSiswa);
+            if (tampilkanNotif) {
+              alert(`Cache database diperbarui (${resMaster.masterSiswa.length} wisudawan siap offline).`);
+            }
+          }
+        }
+      } catch (e) {
+        if (tampilkanNotif) alert('Koneksi internet kurang stabil. Antrean tetap aman tersimpan di HP.');
+      } finally {
+        sedangSync = false;
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sync';
+        perbaruiInfoStatusOffline();
       }
     }
 
@@ -263,15 +405,13 @@
       document.getElementById('lblInfoPos').innerText = 'Aktif: ' + namaPos;
       document.getElementById('layarSetup').classList.add('hidden');
       document.getElementById('layarScanner').classList.remove('hidden');
+      perbaruiInfoStatusOffline();
       mulaiKamera();
     }
 
     function toggleKamera() {
-      if (kameraAktif) {
-        hentikanKamera();
-      } else {
-        mulaiKamera();
-      }
+      if (kameraAktif) hentikanKamera();
+      else mulaiKamera();
     }
 
     function updateUiStatusKamera(isOn) {
@@ -285,7 +425,7 @@
       if (isOn) {
         placeholder.classList.add('hidden');
         readerEl.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[280px] flex items-center justify-center";
+        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[270px] flex items-center justify-center";
         btn.className = "flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video-slash"></i> Matikan Kamera';
       } else {
@@ -293,7 +433,7 @@
         btnSenter.classList.add('hidden');
         readerEl.classList.add('hidden');
         placeholder.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[280px] flex items-center justify-center";
+        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[270px] flex items-center justify-center";
         btn.className = "flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video"></i> Nyalakan Kamera';
       }
@@ -301,7 +441,6 @@
 
     function mulaiKamera() {
       if (!html5QrCode) {
-        // AKTIFKAN NATIVE BARCODE DETECTOR (CEPAT SEPERTI KAMERA BAWAAN HP)
         html5QrCode = new Html5Qrcode("reader", {
           formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
           experimentalFeatures: { useBarCodeDetectorIfSupported: true }
@@ -310,7 +449,6 @@
       sedangMemproses = false;
       updateUiStatusKamera(true);
 
-      // KONFIGURASI KECEPATAN TINGGI + RESOLUSI HD + AUTOFOKUS
       const configKamera = {
         fps: 20,
         qrbox: function(viewfinderWidth, viewfinderHeight) {
@@ -332,14 +470,13 @@
         onScanBerhasil,
         () => {}
       ).then(() => {
-        // Cek apakah HP mendukung lampu flash/senter untuk kondisi ruangan redup
         try {
           const caps = html5QrCode.getRunningTrackCameraCapabilities();
           if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
             document.getElementById('btnToggleSenter').classList.remove('hidden');
           }
         } catch (e) {}
-      }).catch(err => {
+      }).catch(() => {
         updateUiStatusKamera(false);
         alert("Kamera tidak dapat diakses. Pastikan izin kamera diizinkan pada browser HP Anda.");
       });
@@ -349,9 +486,7 @@
       if (!html5QrCode || !kameraAktif) return;
       try {
         senterAktif = !senterAktif;
-        html5QrCode.applyVideoConstraints({
-          advanced: [{ torch: senterAktif }]
-        });
+        html5QrCode.applyVideoConstraints({ advanced: [{ torch: senterAktif }] });
         const btnSenter = document.getElementById('btnToggleSenter');
         btnSenter.className = senterAktif
           ? "bg-amber-300 text-slate-950 font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 ring-2 ring-white"
@@ -369,6 +504,63 @@
       }
     }
 
+    function ekstrakTokenQr(rawText) {
+      let token = String(rawText || '').trim();
+      if (token.indexOf('scan=') > -1) {
+        token = token.split('scan=')[1].split('&')[0];
+      }
+      return decodeURIComponent(token);
+    }
+
+    // CEK DATA DARI CACHE LOKAL (SAAT OFFLINE / SINYAL LAMBAT)
+    function cekDariCacheLokal(token) {
+      const cache = getMasterCache();
+      const s = cache.find(item => item.qr_token === token);
+      if (!s) {
+        return { status: 'NOT_FOUND', pesan: 'QR Code tidak ditemukan dalam database lokal!' };
+      }
+      // Cek juga apakah sudah masuk di antrean offline HP ini
+      const queue = getOfflineQueue();
+      const inQueue = queue.find(q => q.id_siswa === s.id_siswa);
+      if (s.status_hadir === 'HADIR' || inQueue) {
+        return {
+          ...s,
+          status: 'SUDAH_HADIR',
+          waktu_presensi: inQueue ? inQueue.jam_lokal : s.waktu_presensi,
+          petugas_scan: inQueue ? (inQueue.nama_petugas + ' (Antrean Offline)') : s.petugas_scan
+        };
+      }
+      return { ...s, status: 'VALID' };
+    }
+
+    // SIMPAN KEHADIRAN KE ANTREAN OFFLINE LOKAL
+    function simpanKeAntreanOffline(siswa, jmlWali, namaPos) {
+      const now = new Date();
+      const jamLokal = now.toTimeString().slice(0, 8);
+      const queue = getOfflineQueue();
+
+      if (!queue.some(q => q.id_siswa === siswa.id_siswa)) {
+        queue.push({
+          id_siswa: siswa.id_siswa,
+          jml_wali: jmlWali,
+          nama_petugas: namaPos,
+          waktu_iso: now.toISOString(),
+          jam_lokal: jamLokal
+        });
+        setOfflineQueue(queue);
+      }
+
+      // Tandai HADIR juga di cache lokal agar mencegah scan ganda
+      const cache = getMasterCache();
+      const idx = cache.findIndex(item => item.id_siswa === siswa.id_siswa);
+      if (idx > -1) {
+        cache[idx].status_hadir = 'HADIR';
+        cache[idx].waktu_presensi = jamLokal;
+        cache[idx].petugas_scan = namaPos + ' (Offline)';
+        setMasterCache(cache);
+      }
+    }
+
     async function onScanBerhasil(decodedText) {
       if (sedangMemproses) return;
       sedangMemproses = true;
@@ -383,59 +575,100 @@
       const pin = localStorage.getItem('gh_gas_pin');
       const pos = localStorage.getItem('gh_gas_pos');
       const isAuto = document.getElementById('chkAutoConfirm').checked;
+      const token = ekstrakTokenQr(decodedText);
 
-      try {
-        const res = await panggilApiGas(url, {
-          action: 'cek',
-          pin: pin,
-          qrText: decodedText
-        });
+      let dataSiswa = null;
+      let modeOfflineAktif = !navigator.onLine;
 
-        document.getElementById('overlayLoading').classList.add('hidden');
-
-        if (!res.sukses) {
-          tampilkanModalError(res.pesan);
-          return;
-        }
-
-        const data = res.data;
-        if (data.status === 'NOT_FOUND' || data.status === 'ERROR') {
-          bunyiBeep(300, 350);
-          tampilkanModalError(data.pesan);
-          return;
-        }
-
-        siswaAktif = data;
-
-        if (isAuto && data.status === 'VALID') {
-          document.getElementById('overlayLoading').classList.remove('hidden');
-          const resSimpan = await panggilApiGas(url, {
-            action: 'simpan',
-            id_siswa: data.id_siswa,
-            jml_wali: 2,
-            nama_petugas: pos,
-            pin: pin
-          });
-          document.getElementById('overlayLoading').classList.add('hidden');
-
-          if (resSimpan.sukses) {
-            bunyiBeep(1200, 200);
-            tampilkanModalSiswa(data, 'AUTO_SUKSES');
+      // 1. Jika Online, coba cek langsung ke server dengan batas waktu 4 detik
+      if (!modeOfflineAktif) {
+        try {
+          const res = await panggilApiGas(url, { action: 'cek', pin: pin, qrText: token }, 4000);
+          if (res.sukses) {
+            dataSiswa = res.data;
           } else {
-            bunyiBeep(300, 350);
-            tampilkanModalError(resSimpan.pesan);
+            document.getElementById('overlayLoading').classList.add('hidden');
+            tampilkanModalError(res.pesan);
+            return;
           }
-        } else {
-          tampilkanModalSiswa(data, data.status);
+        } catch (err) {
+          // Timeout / sinyal gedung drop -> langsung beralih ke Cache Offline!
+          modeOfflineAktif = true;
         }
+      }
 
-      } catch (err) {
-        document.getElementById('overlayLoading').classList.add('hidden');
-        tampilkanModalError('Koneksi terputus saat memeriksa QR Code.');
+      // 2. Fallback ke Cache Lokal jika Offline atau Timeout
+      if (modeOfflineAktif) {
+        dataSiswa = cekDariCacheLokal(token);
+      }
+
+      document.getElementById('overlayLoading').classList.add('hidden');
+
+      if (!dataSiswa || dataSiswa.status === 'NOT_FOUND' || dataSiswa.status === 'ERROR') {
+        bunyiBeep(300, 350);
+        tampilkanModalError(dataSiswa ? dataSiswa.pesan : 'QR Code tidak dikenal.');
+        return;
+      }
+
+      siswaAktif = dataSiswa;
+
+      // 3. Jika Mode Scan Kilat aktif dan siswa VALID
+      if (isAuto && dataSiswa.status === 'VALID') {
+        await eksekusiSimpanHadir(dataSiswa, 2, pos, true);
+      } else {
+        tampilkanModalSiswa(dataSiswa, dataSiswa.status, modeOfflineAktif);
       }
     }
 
-    function tampilkanModalSiswa(data, modeStatus) {
+    async function eksekusiSimpanHadir(siswa, jmlWali, namaPos, isAutoMode) {
+      const url = localStorage.getItem('gh_gas_url');
+      const pin = localStorage.getItem('gh_gas_pin');
+      let tersimpanOffline = !navigator.onLine;
+
+      if (!tersimpanOffline) {
+        document.getElementById('overlayLoading').classList.remove('hidden');
+        try {
+          const resSimpan = await panggilApiGas(url, {
+            action: 'simpan',
+            id_siswa: siswa.id_siswa,
+            jml_wali: jmlWali,
+            nama_petugas: namaPos,
+            pin: pin
+          }, 4500);
+
+          document.getElementById('overlayLoading').classList.add('hidden');
+
+          if (resSimpan.sukses) {
+            // Update cache lokal juga
+            const cache = getMasterCache();
+            const idx = cache.findIndex(item => item.id_siswa === siswa.id_siswa);
+            if (idx > -1) {
+              cache[idx].status_hadir = 'HADIR';
+              setMasterCache(cache);
+            }
+            bunyiBeep(1200, 200);
+            tampilkanModalSiswa(siswa, isAutoMode ? 'AUTO_SUKSES' : 'MANUAL_SUKSES', false);
+            return;
+          } else {
+            bunyiBeep(300, 350);
+            tampilkanModalError(resSimpan.pesan);
+            return;
+          }
+        } catch (err) {
+          document.getElementById('overlayLoading').classList.add('hidden');
+          tersimpanOffline = true;
+        }
+      }
+
+      // Simpan ke Antrean Offline jika internet putus/lambat
+      if (tersimpanOffline) {
+        simpanKeAntreanOffline(siswa, jmlWali, namaPos);
+        bunyiBeep(1100, 200);
+        tampilkanModalSiswa(siswa, 'OFFLINE_SUKSES', true);
+      }
+    }
+
+    function tampilkanModalSiswa(data, modeStatus, isOffline) {
       const banner = document.getElementById('modalBanner');
       const judul = document.getElementById('modalStatusJudul');
       const sub = document.getElementById('modalStatusSub');
@@ -456,14 +689,21 @@
         judul.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> SUDAH MELAKUKAN PRESENSI';
         sub.innerText = `Tercatat pukul ${data.waktu_presensi} (${data.petugas_scan})`;
         blokWali.classList.add('hidden');
-      } else if (modeStatus === 'AUTO_SUKSES') {
+      } else if (modeStatus === 'OFFLINE_SUKSES') {
+        banner.className = 'bg-teal-600 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-1"></i> TERSIMPAN OFFLINE DI HP';
+        sub.innerText = 'Akan otomatis terkirim ke server saat sinyal kembali';
+        blokWali.classList.add('hidden');
+      } else if (modeStatus === 'AUTO_SUKSES' || modeStatus === 'MANUAL_SUKSES') {
         banner.className = 'bg-emerald-600 text-white px-5 py-3.5 text-center';
-        judul.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> PRESENSI BERHASIL (SCAN KILAT)';
-        sub.innerText = 'Kehadiran wisudawan & 2 wali otomatis tercatat';
+        judul.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> PRESENSI BERHASIL DICATAT';
+        sub.innerText = 'Data langsung tampil di Layar TV Penyambutan';
         blokWali.classList.add('hidden');
       } else {
-        banner.className = 'bg-blue-700 text-white px-5 py-3.5 text-center';
-        judul.innerHTML = '<i class="fa-solid fa-qrcode mr-1"></i> DATA WISUDAWAN VALID';
+        banner.className = isOffline ? 'bg-slate-800 text-white px-5 py-3.5 text-center' : 'bg-blue-700 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = isOffline
+          ? '<i class="fa-solid fa-database mr-1 text-amber-400"></i> DATA VALID (MODE OFFLINE)'
+          : '<i class="fa-solid fa-qrcode mr-1"></i> DATA WISUDAWAN VALID';
         sub.innerText = 'Silakan konfirmasi jumlah wali yang hadir';
         blokWali.classList.remove('hidden');
         jmlWaliDipilih = 2;
@@ -495,34 +735,11 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
 
-      const url = localStorage.getItem('gh_gas_url');
-      const pin = localStorage.getItem('gh_gas_pin');
-      const pos = localStorage.getItem('gh_gas_pos');
+      const pos = localStorage.getItem('gh_gas_pos') || 'Petugas Pintu';
+      await eksekusiSimpanHadir(siswaAktif, jmlWaliDipilih, pos, false);
 
-      try {
-        const res = await panggilApiGas(url, {
-          action: 'simpan',
-          id_siswa: siswaAktif.id_siswa,
-          jml_wali: jmlWaliDipilih,
-          nama_petugas: pos,
-          pin: pin
-        });
-
-        if (res.sukses) {
-          bunyiBeep(1200, 200);
-          document.getElementById('modalBanner').className = 'bg-emerald-600 text-white px-5 py-3.5 text-center';
-          document.getElementById('modalStatusJudul').innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> KEHADIRAN TERCATAT!';
-          document.getElementById('modalStatusSub').innerText = `Wisudawan + ${jmlWaliDipilih} Wali berhasil disimpan`;
-          document.getElementById('blokPilihWali').classList.add('hidden');
-        } else {
-          alert(res.pesan);
-        }
-      } catch (err) {
-        alert('Gagal menyimpan data presensi.');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-check-double"></i> KONFIRMASI KEHADIRAN';
-      }
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-check-double"></i> KONFIRMASI KEHADIRAN';
     }
 
     function tutupModalDanLanjutScan() {
@@ -534,13 +751,21 @@
       }
     }
 
-    async function panggilApiGas(url, payload) {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-      return await response.json();
+    // Fetch dengan batas waktu (timeout) agar tidak macet saat sinyal lambat
+    async function panggilApiGas(url, payload, timeoutMs = 6000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload),
+          signal: controller.signal
+        });
+        return await response.json();
+      } finally {
+        clearTimeout(timer);
+      }
     }
   </script>
 </body>
