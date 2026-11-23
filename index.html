@@ -37,7 +37,7 @@
     </button>
   </header>
 
-  <!-- LAYAR 1: FORM PENGATURAN KONEKSI (MUNCUL PERTAMA KALI) -->
+  <!-- LAYAR 1: FORM PENGATURAN KONEKSI -->
   <main id="layarSetup" class="flex-1 flex items-center justify-center p-4">
     <div class="bg-white text-slate-800 max-w-md w-full rounded-2xl p-6 shadow-2xl space-y-4">
       <div class="text-center space-y-1">
@@ -79,7 +79,7 @@
   <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-3.5">
     
     <!-- Kotak Kamera -->
-    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[260px] flex items-center justify-center">
+    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[280px] flex items-center justify-center">
       <div id="reader" class="w-full"></div>
 
       <!-- Tampilan Placeholder Saat Kamera Dimatikan -->
@@ -98,11 +98,15 @@
       </div>
     </div>
 
-    <!-- Tombol Kontrol Matikan / Nyalakan Kamera -->
-    <div class="w-full max-w-sm">
+    <!-- Tombol Kontrol Matikan / Nyalakan Kamera & Senter -->
+    <div class="w-full max-w-sm flex gap-2">
       <button id="btnToggleKamera" onclick="toggleKamera()"
-        class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition">
+        class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition">
         <i class="fa-solid fa-video-slash"></i> Matikan Kamera
+      </button>
+      <button id="btnToggleSenter" onclick="toggleSenter()" title="Nyalakan Lampu Flash"
+        class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-bolt"></i> Senter
       </button>
     </div>
 
@@ -118,8 +122,8 @@
       </label>
     </div>
 
-    <p class="text-xs text-slate-400 text-center max-w-xs">
-      Arahkan kamera ke <b>QR Code Undangan</b> wisudawan. Pastikan pencahayaan cukup.
+    <p class="text-[11px] text-slate-400 text-center max-w-xs">
+      Jaga jarak kamera sekitar <b>15–20 cm</b> dari kertas undangan agar fokus QR tajam.
     </p>
   </main>
 
@@ -127,13 +131,11 @@
   <div id="modalHasilScan" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-3">
     <div class="bg-white text-slate-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
       
-      <!-- Banner Status Atas Modal -->
       <div id="modalBanner" class="bg-emerald-600 text-white px-5 py-3.5 text-center">
         <h3 id="modalStatusJudul" class="font-extrabold text-sm uppercase tracking-wide">-</h3>
         <p id="modalStatusSub" class="text-[11px] opacity-90">-</p>
       </div>
 
-      <!-- Konten Biodata Siswa -->
       <div id="modalBodySiswa" class="p-5 space-y-4">
         <div class="flex items-center gap-4">
           <img id="resFoto" src="" class="w-20 h-24 object-cover object-top rounded-xl border border-slate-300 bg-slate-100 flex-shrink-0">
@@ -145,7 +147,6 @@
           </div>
         </div>
 
-        <!-- Nomor Kursi -->
         <div class="grid grid-cols-2 gap-2.5 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
           <div>
             <span class="block text-[10px] font-bold text-slate-500 uppercase">Kursi Siswa</span>
@@ -157,7 +158,6 @@
           </div>
         </div>
 
-        <!-- Pilihan Jumlah Wali -->
         <div id="blokPilihWali" class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">Jumlah Orang Tua / Wali Hadir:</label>
@@ -175,7 +175,6 @@
         </div>
       </div>
 
-      <!-- Tombol Tutup & Lanjut Scan -->
       <div class="p-4 bg-slate-100 border-t border-slate-200">
         <button onclick="tutupModalDanLanjutScan()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-3 rounded-xl">
           <i class="fa-solid fa-qrcode mr-1"></i> Scan Wisudawan Berikutnya
@@ -189,6 +188,7 @@
     let html5QrCode = null;
     let sedangMemproses = false;
     let kameraAktif = false;
+    let senterAktif = false;
     let siswaAktif = null;
     let jmlWaliDipilih = 2;
 
@@ -266,7 +266,6 @@
       mulaiKamera();
     }
 
-    // FUNGSI TOGGLE MATIKAN / NYALAKAN KAMERA
     function toggleKamera() {
       if (kameraAktif) {
         hentikanKamera();
@@ -278,6 +277,7 @@
     function updateUiStatusKamera(isOn) {
       kameraAktif = isOn;
       const btn = document.getElementById('btnToggleKamera');
+      const btnSenter = document.getElementById('btnToggleSenter');
       const placeholder = document.getElementById('placeholderKameraMati');
       const readerEl = document.getElementById('reader');
       const wadah = document.getElementById('wadahKotakKamera');
@@ -285,34 +285,78 @@
       if (isOn) {
         placeholder.classList.add('hidden');
         readerEl.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[260px] flex items-center justify-center";
-        btn.className = "w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
+        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[280px] flex items-center justify-center";
+        btn.className = "flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video-slash"></i> Matikan Kamera';
       } else {
+        senterAktif = false;
+        btnSenter.classList.add('hidden');
         readerEl.classList.add('hidden');
         placeholder.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[260px] flex items-center justify-center";
-        btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
+        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[280px] flex items-center justify-center";
+        btn.className = "flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video"></i> Nyalakan Kamera';
       }
     }
 
     function mulaiKamera() {
       if (!html5QrCode) {
-        html5QrCode = new Html5Qrcode("reader");
+        // AKTIFKAN NATIVE BARCODE DETECTOR (CEPAT SEPERTI KAMERA BAWAAN HP)
+        html5QrCode = new Html5Qrcode("reader", {
+          formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        });
       }
       sedangMemproses = false;
       updateUiStatusKamera(true);
 
+      // KONFIGURASI KECEPATAN TINGGI + RESOLUSI HD + AUTOFOKUS
+      const configKamera = {
+        fps: 20,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(minEdge * 0.78);
+          return { width: size, height: size };
+        },
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          advanced: [{ focusMode: "continuous" }]
+        }
+      };
+
       html5QrCode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 230, height: 230 } },
+        configKamera,
         onScanBerhasil,
         () => {}
-      ).catch(err => {
+      ).then(() => {
+        // Cek apakah HP mendukung lampu flash/senter untuk kondisi ruangan redup
+        try {
+          const caps = html5QrCode.getRunningTrackCameraCapabilities();
+          if (caps && caps.torchFeature && caps.torchFeature().isSupported()) {
+            document.getElementById('btnToggleSenter').classList.remove('hidden');
+          }
+        } catch (e) {}
+      }).catch(err => {
         updateUiStatusKamera(false);
         alert("Kamera tidak dapat diakses. Pastikan izin kamera diizinkan pada browser HP Anda.");
       });
+    }
+
+    function toggleSenter() {
+      if (!html5QrCode || !kameraAktif) return;
+      try {
+        senterAktif = !senterAktif;
+        html5QrCode.applyVideoConstraints({
+          advanced: [{ torch: senterAktif }]
+        });
+        const btnSenter = document.getElementById('btnToggleSenter');
+        btnSenter.className = senterAktif
+          ? "bg-amber-300 text-slate-950 font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-1.5 ring-2 ring-white"
+          : "bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-1.5";
+      } catch (e) {}
     }
 
     function hentikanKamera() {
