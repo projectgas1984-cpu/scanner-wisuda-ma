@@ -76,15 +76,34 @@
   </main>
 
   <!-- LAYAR 2: KAMERA SCANNER LIVE -->
-  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-4">
+  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-3.5">
     
     <!-- Kotak Kamera -->
-    <div class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative">
+    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[260px] flex items-center justify-center">
       <div id="reader" class="w-full"></div>
+
+      <!-- Tampilan Placeholder Saat Kamera Dimatikan -->
+      <div id="placeholderKameraMati" class="hidden p-8 text-center space-y-2.5">
+        <div class="w-16 h-16 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mx-auto text-2xl border border-slate-700">
+          <i class="fa-solid fa-video-slash"></i>
+        </div>
+        <p class="text-sm font-bold text-slate-200">Kamera Dinonaktifkan</p>
+        <p class="text-[11px] text-slate-400">Tekan tombol <b>Nyalakan Kamera</b> di bawah untuk mulai memindai kembali.</p>
+      </div>
+
+      <!-- Overlay Loading Verifikasi -->
       <div id="overlayLoading" class="hidden absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center gap-2 z-10">
         <i class="fa-solid fa-spinner fa-spin text-3xl text-amber-400"></i>
         <p class="text-xs font-bold text-white">Memverifikasi QR Code...</p>
       </div>
+    </div>
+
+    <!-- Tombol Kontrol Matikan / Nyalakan Kamera -->
+    <div class="w-full max-w-sm">
+      <button id="btnToggleKamera" onclick="toggleKamera()"
+        class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition">
+        <i class="fa-solid fa-video-slash"></i> Matikan Kamera
+      </button>
     </div>
 
     <!-- Mode Scan Cepat (Otomatis vs Manual) -->
@@ -106,7 +125,7 @@
 
   <!-- MODAL HASIL SCAN & KONFIRMASI -->
   <div id="modalHasilScan" class="hidden fixed inset-0 bg-black/80 z-50 flex items-end sm:items-center justify-center p-3">
-    <div class="bg-white text-slate-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-bounce-once">
+    <div class="bg-white text-slate-800 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl">
       
       <!-- Banner Status Atas Modal -->
       <div id="modalBanner" class="bg-emerald-600 text-white px-5 py-3.5 text-center">
@@ -138,7 +157,7 @@
           </div>
         </div>
 
-        <!-- Pilihan Jumlah Wali (Muncul jika status VALID & bukan auto-confirm) -->
+        <!-- Pilihan Jumlah Wali -->
         <div id="blokPilihWali" class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1.5">Jumlah Orang Tua / Wali Hadir:</label>
@@ -169,10 +188,10 @@
   <script>
     let html5QrCode = null;
     let sedangMemproses = false;
+    let kameraAktif = false;
     let siswaAktif = null;
     let jmlWaliDipilih = 2;
 
-    // Suara Beep Sederhana Tanpa File Eksternal
     function bunyiBeep(frekuensi = 880, durasi = 150) {
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -188,7 +207,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Ambil parameter URL jika dibagikan via link (?url=...&pin=...&pos=...)
       const params = new URLSearchParams(window.location.search);
       const savedUrl = params.get('url') || localStorage.getItem('gh_gas_url') || '';
       const savedPin = params.get('pin') || localStorage.getItem('gh_gas_pin') || '';
@@ -248,24 +266,62 @@
       mulaiKamera();
     }
 
+    // FUNGSI TOGGLE MATIKAN / NYALAKAN KAMERA
+    function toggleKamera() {
+      if (kameraAktif) {
+        hentikanKamera();
+      } else {
+        mulaiKamera();
+      }
+    }
+
+    function updateUiStatusKamera(isOn) {
+      kameraAktif = isOn;
+      const btn = document.getElementById('btnToggleKamera');
+      const placeholder = document.getElementById('placeholderKameraMati');
+      const readerEl = document.getElementById('reader');
+      const wadah = document.getElementById('wadahKotakKamera');
+
+      if (isOn) {
+        placeholder.classList.add('hidden');
+        readerEl.classList.remove('hidden');
+        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[260px] flex items-center justify-center";
+        btn.className = "w-full bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
+        btn.innerHTML = '<i class="fa-solid fa-video-slash"></i> Matikan Kamera';
+      } else {
+        readerEl.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[260px] flex items-center justify-center";
+        btn.className = "w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
+        btn.innerHTML = '<i class="fa-solid fa-video"></i> Nyalakan Kamera';
+      }
+    }
+
     function mulaiKamera() {
       if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
       }
       sedangMemproses = false;
+      updateUiStatusKamera(true);
+
       html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: { width: 230, height: 230 } },
         onScanBerhasil,
         () => {}
       ).catch(err => {
+        updateUiStatusKamera(false);
         alert("Kamera tidak dapat diakses. Pastikan izin kamera diizinkan pada browser HP Anda.");
       });
     }
 
     function hentikanKamera() {
       if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.stop().catch(() => {});
+        html5QrCode.stop()
+          .then(() => updateUiStatusKamera(false))
+          .catch(() => updateUiStatusKamera(false));
+      } else {
+        updateUiStatusKamera(false);
       }
     }
 
@@ -274,7 +330,6 @@
       sedangMemproses = true;
       bunyiBeep(950, 120);
 
-      // Jeda kamera sementara memproses data
       if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.pause(true);
       }
@@ -308,7 +363,6 @@
 
         siswaAktif = data;
 
-        // Jika Mode Scan Kilat aktif dan siswa belum hadir -> langsung simpan hadir!
         if (isAuto && data.status === 'VALID') {
           document.getElementById('overlayLoading').classList.remove('hidden');
           const resSimpan = await panggilApiGas(url, {
@@ -431,12 +485,11 @@
       document.getElementById('modalHasilScan').classList.add('hidden');
       siswaAktif = null;
       sedangMemproses = false;
-      if (html5QrCode) {
+      if (kameraAktif && html5QrCode) {
         try { html5QrCode.resume(); } catch (e) { mulaiKamera(); }
       }
     }
 
-    // Menggunakan text/plain agar terhindar dari blokir CORS preflight Google Apps Script
     async function panggilApiGas(url, payload) {
       const response = await fetch(url, {
         method: 'POST',
