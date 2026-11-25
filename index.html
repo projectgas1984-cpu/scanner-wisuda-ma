@@ -28,11 +28,11 @@
 <body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between select-none">
 
   <!-- HEADER ATAS -->
-  <header class="bg-emerald-900 px-4 py-3 shadow-lg flex items-center justify-between border-b border-emerald-700">
+  <header id="headerUtama" class="bg-emerald-900 px-4 py-3 shadow-lg flex items-center justify-between border-b border-emerald-700 transition-colors">
     <div class="flex items-center gap-2.5">
       <img src="https://lh3.googleusercontent.com/d/1zSJYgI4-5bk-mKUnHFV6o_U5h0FgiR_T" alt="Logo" class="w-9 h-9 object-contain bg-white rounded-xl p-0.5">
       <div>
-        <h1 class="font-bold text-sm leading-tight">Scanner Presensi Wisuda</h1>
+        <h1 id="lblJudulHeader" class="font-bold text-sm leading-tight">Scanner Presensi Wisuda</h1>
         <p id="lblInfoPos" class="text-[11px] text-emerald-300">Belum terhubung</p>
       </div>
     </div>
@@ -40,7 +40,7 @@
       <span id="badgeNetwork" class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-200 border border-emerald-500/40">
         <i class="fa-solid fa-wifi mr-1"></i> Online
       </span>
-      <button onclick="bukaPengaturan()" title="Pengaturan Koneksi" class="p-2.5 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-emerald-100 border border-emerald-600">
+      <button onclick="bukaPengaturan()" title="Pengaturan Koneksi" class="p-2.5 rounded-xl bg-black/25 hover:bg-black/40 text-white border border-white/20">
         <i class="fa-solid fa-gear"></i>
       </button>
     </div>
@@ -54,7 +54,7 @@
           <i class="fa-solid fa-link"></i>
         </div>
         <h2 class="font-bold text-lg text-slate-900">Hubungkan ke Sistem Wisuda</h2>
-        <p class="text-xs text-slate-500">Data seluruh wisudawan akan otomatis diunduh ke HP ini agar tetap berjalan lancar meski sinyal gedung terputus.</p>
+        <p class="text-xs text-slate-500">Data seluruh wisudawan otomatis diunduh ke HP ini agar tetap berjalan lancar meski sinyal gedung terputus.</p>
       </div>
 
       <div class="space-y-3 text-xs">
@@ -71,8 +71,8 @@
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Nama Pos / Pintu Masuk *</label>
-          <input type="text" id="inpPos" placeholder="Contoh: Pos Pintu Putra"
+          <label class="block font-bold text-slate-700 mb-1">Nama Pos / Petugas *</label>
+          <input type="text" id="inpPos" placeholder="Contoh: Pos Pintu Putra / Meja Konsumsi"
             class="w-full border border-slate-300 rounded-xl p-2.5 focus:outline-none focus:border-emerald-600">
         </div>
       </div>
@@ -85,25 +85,37 @@
   </main>
 
   <!-- LAYAR 2: KAMERA SCANNER LIVE -->
-  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-3">
+  <main id="layarScanner" class="hidden flex-1 flex flex-col items-center justify-center p-4 space-y-2.5">
     
+    <!-- PEMILIH MODE POS (PINTU MASUK VS KONSUMSI / KENANG-KENANGAN) -->
+    <div class="w-full max-w-sm bg-slate-800 p-1.5 rounded-2xl border border-slate-700 grid grid-cols-2 gap-1.5 text-xs font-bold">
+      <button id="tabModePresensi" onclick="pilihModePos('presensi')"
+        class="py-2.5 px-2 rounded-xl bg-emerald-600 text-white shadow flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-door-open"></i> Pintu Masuk
+      </button>
+      <button id="tabModeKonsumsi" onclick="pilihModePos('konsumsi')"
+        class="py-2.5 px-2 rounded-xl text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-1.5 transition">
+        <i class="fa-solid fa-gift"></i> Konsumsi / Souvenir
+      </button>
+    </div>
+
     <!-- BAR STATUS DATABASE OFFLINE & ANTREAN SYNC -->
-    <div class="w-full max-w-sm bg-slate-800/90 border border-slate-700 rounded-2xl p-3 flex items-center justify-between gap-2 text-xs">
+    <div class="w-full max-w-sm bg-slate-800/90 border border-slate-700 rounded-2xl p-2.5 px-3.5 flex items-center justify-between gap-2 text-xs">
       <div class="space-y-0.5">
-        <p class="font-bold text-slate-200 flex items-center gap-1.5">
+        <p class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
           <i class="fa-solid fa-database text-emerald-400"></i>
           <span id="lblCacheCount">Cache Offline: 0 Siswa</span>
         </p>
-        <p id="lblQueueStatus" class="text-[11px] text-slate-400">Semua data tersinkronisasi</p>
+        <p id="lblQueueStatus" class="text-[10px] text-slate-400">Semua data tersinkronisasi</p>
       </div>
       <button id="btnSyncManual" onclick="sinkronkanSekarang(true)"
-        class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-[11px] py-2 px-3 rounded-xl flex items-center gap-1.5 flex-shrink-0 transition">
+        class="bg-slate-700 hover:bg-slate-600 text-white font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center gap-1.5 flex-shrink-0 transition">
         <i class="fa-solid fa-rotate"></i> Sync
       </button>
     </div>
 
     <!-- Kotak Kamera -->
-    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[270px] flex items-center justify-center">
+    <div id="wadahKotakKamera" class="w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[260px] flex items-center justify-center">
       <div id="reader" class="w-full"></div>
 
       <!-- Placeholder Kamera Mati -->
@@ -134,8 +146,8 @@
       </button>
     </div>
 
-    <!-- Mode Scan Cepat -->
-    <div class="w-full max-w-sm bg-slate-800 border border-slate-700 p-3.5 rounded-2xl flex items-center justify-between">
+    <!-- Mode Scan Cepat (Hanya tampil pada Mode Pintu Masuk) -->
+    <div id="boxAutoConfirm" class="w-full max-w-sm bg-slate-800 border border-slate-700 p-3 rounded-2xl flex items-center justify-between">
       <div>
         <p class="text-xs font-bold text-white">Mode Scan Kilat (Auto-Hadir)</p>
         <p class="text-[10px] text-slate-400">Otomatis catat hadir (2 wali) tanpa klik konfirmasi</p>
@@ -168,7 +180,8 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+        <!-- Info Kursi (Mode Pintu Masuk) -->
+        <div id="blokInfoKursi" class="grid grid-cols-2 gap-2.5 text-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
           <div>
             <span class="block text-[10px] font-bold text-slate-500 uppercase">Kursi Siswa</span>
             <span id="resKursiSiswa" class="block text-xl font-black text-emerald-800">-</span>
@@ -177,6 +190,13 @@
             <span class="block text-[10px] font-bold text-slate-500 uppercase">Kursi Wali</span>
             <span id="resKursiWali" class="block text-xl font-black text-blue-800">-</span>
           </div>
+        </div>
+
+        <!-- Info Paket Konsumsi (Mode Konsumsi / Kenang-kenangan) -->
+        <div id="blokInfoKonsumsi" class="hidden bg-indigo-50 border border-indigo-200 p-3.5 rounded-2xl text-center space-y-1">
+          <span class="block text-[10px] font-bold text-indigo-700 uppercase">Alokasi Paket Konsumsi / Souvenir</span>
+          <p id="resPaketKonsumsi" class="text-base font-black text-indigo-950">1 Wisudawan + 2 Wali</p>
+          <p id="resStatusKonsumsiDetail" class="text-[11px] text-indigo-700">-</p>
         </div>
 
         <div id="blokPilihWali" class="space-y-3">
@@ -198,7 +218,7 @@
 
       <div class="p-4 bg-slate-100 border-t border-slate-200">
         <button onclick="tutupModalDanLanjutScan()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-3 rounded-xl">
-          <i class="fa-solid fa-qrcode mr-1"></i> Scan Wisudawan Berikutnya
+          <i class="fa-solid fa-qrcode mr-1"></i> Scan Berikutnya
         </button>
       </div>
 
@@ -213,6 +233,7 @@
     let senterAktif = false;
     let siswaAktif = null;
     let jmlWaliDipilih = 2;
+    let modePosAktif = 'presensi'; // 'presensi' atau 'konsumsi'
 
     function bunyiBeep(frekuensi = 880, durasi = 150) {
       try {
@@ -226,6 +247,33 @@
         osc.start();
         setTimeout(() => { osc.stop(); ctx.close(); }, durasi);
       } catch (e) {}
+    }
+
+    // PILIH MODE POS (PINTU MASUK VS KONSUMSI / SOUVENIR)
+    function pilihModePos(mode) {
+      modePosAktif = mode;
+      localStorage.setItem('gh_mode_pos', mode);
+
+      const header = document.getElementById('headerUtama');
+      const judul = document.getElementById('lblJudulHeader');
+      const tabPresensi = document.getElementById('tabModePresensi');
+      const tabKonsumsi = document.getElementById('tabModeKonsumsi');
+      const boxAuto = document.getElementById('boxAutoConfirm');
+
+      if (mode === 'konsumsi') {
+        header.className = 'bg-indigo-900 px-4 py-3 shadow-lg flex items-center justify-between border-b border-indigo-700 transition-colors';
+        judul.innerText = 'Pos Konsumsi & Kenang-kenangan';
+        tabPresensi.className = 'py-2.5 px-2 rounded-xl text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-1.5 transition';
+        tabKonsumsi.className = 'py-2.5 px-2 rounded-xl bg-indigo-600 text-white shadow flex items-center justify-center gap-1.5 transition';
+        boxAuto.classList.add('hidden');
+      } else {
+        header.className = 'bg-emerald-900 px-4 py-3 shadow-lg flex items-center justify-between border-b border-emerald-700 transition-colors';
+        judul.innerText = 'Scanner Presensi Wisuda';
+        tabPresensi.className = 'py-2.5 px-2 rounded-xl bg-emerald-600 text-white shadow flex items-center justify-center gap-1.5 transition';
+        tabKonsumsi.className = 'py-2.5 px-2 rounded-xl text-slate-300 hover:bg-slate-700 flex items-center justify-center gap-1.5 transition';
+        boxAuto.classList.remove('hidden');
+      }
+      updateUiStatusKamera(kameraAktif);
     }
 
     // MANAJEMEN CACHE DATABASE & ANTREAN OFFLINE
@@ -264,10 +312,10 @@
 
       lblCache.innerText = `Cache Offline: ${cache.length} Siswa`;
       if (queue.length > 0) {
-        lblQueue.className = 'text-[11px] font-bold text-amber-300';
+        lblQueue.className = 'text-[10px] font-bold text-amber-300';
         lblQueue.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> ${queue.length} data menunggu dikirim ke server`;
       } else {
-        lblQueue.className = 'text-[11px] text-slate-400';
+        lblQueue.className = 'text-[10px] text-slate-400';
         lblQueue.innerText = 'Semua data tersinkronisasi';
       }
     }
@@ -283,22 +331,22 @@
       const savedUrl = params.get('url') || localStorage.getItem('gh_gas_url') || '';
       const savedPin = params.get('pin') || localStorage.getItem('gh_gas_pin') || '';
       const savedPos = params.get('pos') || localStorage.getItem('gh_gas_pos') || '';
+      const savedMode = params.get('mode') || localStorage.getItem('gh_mode_pos') || 'presensi';
 
       document.getElementById('inpGasUrl').value = savedUrl;
       document.getElementById('inpPin').value = savedPin;
       document.getElementById('inpPos').value = savedPos;
 
+      pilihModePos(savedMode);
       perbaruiInfoStatusOffline();
 
       if (savedUrl && savedPin) {
-        aktifkanTampilanScanner(savedPos || 'Petugas Pintu');
-        // Sinkronisasi latar belakang saat halaman dibuka
+        aktifkanTampilanScanner(savedPos || 'Petugas Pos');
         if (navigator.onLine) {
           sinkronkanSekarang(false);
         }
       }
 
-      // Cek sinkronisasi otomatis setiap 15 detik jika ada antrean offline
       setInterval(() => {
         if (navigator.onLine && getOfflineQueue().length > 0) {
           sinkronkanSekarang(false);
@@ -309,7 +357,7 @@
     async function simpanDanHubungkan() {
       const url = document.getElementById('inpGasUrl').value.trim();
       const pin = document.getElementById('inpPin').value.trim();
-      const pos = document.getElementById('inpPos').value.trim() || 'Petugas Pintu';
+      const pos = document.getElementById('inpPos').value.trim() || 'Petugas Pos';
 
       if (!url || !pin) {
         alert('URL Web App GAS dan PIN Panitia wajib diisi!');
@@ -326,15 +374,12 @@
           localStorage.setItem('gh_gas_url', url);
           localStorage.setItem('gh_gas_pin', pin);
           localStorage.setItem('gh_gas_pos', pos);
-          if (res.masterSiswa) {
-            setMasterCache(res.masterSiswa);
-          }
+          if (res.masterSiswa) setMasterCache(res.masterSiswa);
           aktifkanTampilanScanner(pos);
         } else {
           alert(res.pesan || 'PIN Panitia salah!');
         }
       } catch (err) {
-        // Jika HP sedang offline tapi sudah punya cache lokal sebelumnya, tetap izinkan masuk
         if (getMasterCache().length > 0 && localStorage.getItem('gh_gas_pin') === pin) {
           aktifkanTampilanScanner(pos);
         } else {
@@ -346,7 +391,6 @@
       }
     }
 
-    // SINKRONISASI ANTREAN OFFLINE + REFRESH CACHE DATABASE
     async function sinkronkanSekarang(tampilkanNotif) {
       if (sedangSync) return;
       const url = localStorage.getItem('gh_gas_url');
@@ -375,7 +419,7 @@
             setOfflineQueue([]);
             if (resBatch.masterSiswa) setMasterCache(resBatch.masterSiswa);
             if (tampilkanNotif) {
-              alert(`Sinkronisasi selesai! Terkirim: ${resBatch.berhasil} data, dilewati (sudah tercatat): ${resBatch.dilewati}.`);
+              alert(`Sinkronisasi selesai! Terkirim: ${resBatch.berhasil} data, dilewati: ${resBatch.dilewati}.`);
             }
           }
         } else {
@@ -426,10 +470,12 @@
       const readerEl = document.getElementById('reader');
       const wadah = document.getElementById('wadahKotakKamera');
 
+      const borderAktif = modePosAktif === 'konsumsi' ? 'border-indigo-500' : 'border-emerald-500';
+
       if (isOn) {
         placeholder.classList.add('hidden');
         readerEl.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl relative min-h-[270px] flex items-center justify-center";
+        wadah.className = `w-full max-w-sm bg-black rounded-2xl overflow-hidden border-2 ${borderAktif} shadow-2xl relative min-h-[260px] flex items-center justify-center`;
         btn.className = "flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video-slash"></i> Matikan Kamera';
       } else {
@@ -437,7 +483,7 @@
         btnSenter.classList.add('hidden');
         readerEl.classList.add('hidden');
         placeholder.classList.remove('hidden');
-        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[270px] flex items-center justify-center";
+        wadah.className = "w-full max-w-sm bg-slate-950 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl relative min-h-[260px] flex items-center justify-center";
         btn.className = "flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 px-4 rounded-2xl shadow-lg flex items-center justify-center gap-2 transition";
         btn.innerHTML = '<i class="fa-solid fa-video"></i> Nyalakan Kamera';
       }
@@ -516,16 +562,149 @@
       return decodeURIComponent(token);
     }
 
-    // CEK DATA DARI CACHE LOKAL (SAAT OFFLINE / SINYAL LAMBAT)
+    // =========================================================================
+    // PEMROSESAN HASIL SCAN (CABANG MODE PINTU MASUK VS MODE KONSUMSI)
+    // =========================================================================
+    async function onScanBerhasil(decodedText) {
+      if (sedangMemproses) return;
+      sedangMemproses = true;
+      bunyiBeep(950, 120);
+
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.pause(true);
+      }
+
+      if (modePosAktif === 'konsumsi') {
+        await prosesScanPosKonsumsi(decodedText);
+      } else {
+        await prosesScanPintuMasuk(decodedText);
+      }
+    }
+
+    // JALUR B: POS KONSUMSI / KENANG-KENANGAN
+    async function prosesScanPosKonsumsi(decodedText) {
+      const url = localStorage.getItem('gh_gas_url');
+      const pin = localStorage.getItem('gh_gas_pin');
+      const pos = localStorage.getItem('gh_gas_pos') || 'Pos Konsumsi';
+      const token = ekstrakTokenQr(decodedText);
+
+      let offlineMode = !navigator.onLine;
+      if (!offlineMode) {
+        document.getElementById('overlayLoading').classList.remove('hidden');
+        try {
+          const res = await panggilApiGas(url, {
+            action: 'konsumsi',
+            pin: pin,
+            qrText: token,
+            nama_petugas: pos
+          }, 4500);
+          document.getElementById('overlayLoading').classList.add('hidden');
+
+          if (!res.sukses) {
+            tampilkanModalError(res.pesan);
+            return;
+          }
+          if (res.status === 'NOT_FOUND') {
+            bunyiBeep(300, 350);
+            tampilkanModalError(res.pesan);
+            return;
+          }
+
+          // Perbarui cache lokal
+          const cache = getMasterCache();
+          const idx = cache.findIndex(x => x.id_siswa === res.siswa.id_siswa);
+          if (idx > -1) {
+            cache[idx].status_konsumsi = res.info;
+            setMasterCache(cache);
+          }
+
+          tampilkanModalKonsumsi(res.siswa, res.status, res.info, false);
+          return;
+        } catch (err) {
+          document.getElementById('overlayLoading').classList.add('hidden');
+          offlineMode = true;
+        }
+      }
+
+      // Fallback Offline untuk Pos Konsumsi
+      if (offlineMode) {
+        const cache = getMasterCache();
+        const s = cache.find(item => item.qr_token === token);
+        if (!s) {
+          bunyiBeep(300, 350);
+          tampilkanModalError('QR Code tidak ditemukan di database lokal!');
+          return;
+        }
+
+        const queue = getOfflineQueue();
+        const sudahAntre = queue.find(q => q.id_siswa === s.id_siswa && q.jenis === 'konsumsi');
+        if ((s.status_konsumsi && s.status_konsumsi.indexOf('SUDAH') === 0) || sudahAntre) {
+          tampilkanModalKonsumsi(s, 'SUDAH_AMBIL', sudahAntre ? sudahAntre.info_lokal : s.status_konsumsi, true);
+          return;
+        }
+
+        const now = new Date();
+        const jam = now.toTimeString().slice(0, 5);
+        const infoLokal = `SUDAH (${jam} • ${pos} Offline)`;
+        queue.push({
+          jenis: 'konsumsi',
+          id_siswa: s.id_siswa,
+          nama_petugas: pos,
+          waktu_iso: now.toISOString(),
+          info_lokal: infoLokal
+        });
+        setOfflineQueue(queue);
+
+        s.status_konsumsi = infoLokal;
+        setMasterCache(cache);
+        tampilkanModalKonsumsi(s, 'BERHASIL_AMBIL', infoLokal, true);
+      }
+    }
+
+    function tampilkanModalKonsumsi(siswa, statusKonsumsi, infoDetail, isOffline) {
+      const banner = document.getElementById('modalBanner');
+      const judul = document.getElementById('modalStatusJudul');
+      const sub = document.getElementById('modalStatusSub');
+
+      document.getElementById('modalBodySiswa').classList.remove('hidden');
+      document.getElementById('blokInfoKursi').classList.add('hidden');
+      document.getElementById('blokPilihWali').classList.add('hidden');
+      document.getElementById('blokInfoKonsumsi').classList.remove('hidden');
+
+      document.getElementById('resFoto').src = siswa.url_foto;
+      document.getElementById('resKelas').innerText = siswa.kelas;
+      document.getElementById('resNama').innerText = siswa.nama_lengkap;
+      document.getElementById('resNisn').innerText = 'NISN: ' + siswa.nisn;
+      document.getElementById('resWali').innerText = siswa.nama_wali;
+
+      const jmlWali = Number(siswa.jml_wali_hadir || 2);
+      document.getElementById('resPaketKonsumsi').innerText = `1 Wisudawan + ${jmlWali} Wali (Total ${1 + jmlWali} Paket)`;
+      document.getElementById('resStatusKonsumsiDetail').innerText = infoDetail;
+
+      if (statusKonsumsi === 'SUDAH_AMBIL') {
+        bunyiBeep(350, 350);
+        banner.className = 'bg-rose-600 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-ban mr-1"></i> KONSUMSI SUDAH DIAMBIL!';
+        sub.innerText = 'Tolak pengambilan ganda';
+      } else {
+        bunyiBeep(1200, 200);
+        banner.className = isOffline ? 'bg-teal-600 text-white px-5 py-3.5 text-center' : 'bg-indigo-600 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-gift mr-1"></i> VALID • SILAKAN SERAHKAN PAKET';
+        sub.innerText = isOffline ? 'Tercatat di memori HP (Offline)' : 'Pengambilan konsumsi berhasil dicatat';
+      }
+
+      document.getElementById('modalHasilScan').classList.remove('hidden');
+    }
+
+    // JALUR A: POS PINTU MASUK (PRESENSI)
     function cekDariCacheLokal(token) {
       const cache = getMasterCache();
       const s = cache.find(item => item.qr_token === token);
       if (!s) {
         return { status: 'NOT_FOUND', pesan: 'QR Code tidak ditemukan dalam database lokal!' };
       }
-      // Cek juga apakah sudah masuk di antrean offline HP ini
       const queue = getOfflineQueue();
-      const inQueue = queue.find(q => q.id_siswa === s.id_siswa);
+      const inQueue = queue.find(q => q.id_siswa === s.id_siswa && q.jenis !== 'konsumsi');
       if (s.status_hadir === 'HADIR' || inQueue) {
         return {
           ...s,
@@ -537,14 +716,14 @@
       return { ...s, status: 'VALID' };
     }
 
-    // SIMPAN KEHADIRAN KE ANTREAN OFFLINE LOKAL
     function simpanKeAntreanOffline(siswa, jmlWali, namaPos) {
       const now = new Date();
       const jamLokal = now.toTimeString().slice(0, 8);
       const queue = getOfflineQueue();
 
-      if (!queue.some(q => q.id_siswa === siswa.id_siswa)) {
+      if (!queue.some(q => q.id_siswa === siswa.id_siswa && q.jenis !== 'konsumsi')) {
         queue.push({
+          jenis: 'presensi',
           id_siswa: siswa.id_siswa,
           jml_wali: jmlWali,
           nama_petugas: namaPos,
@@ -554,7 +733,6 @@
         setOfflineQueue(queue);
       }
 
-      // Tandai HADIR juga di cache lokal agar mencegah scan ganda
       const cache = getMasterCache();
       const idx = cache.findIndex(item => item.id_siswa === siswa.id_siswa);
       if (idx > -1) {
@@ -565,14 +743,7 @@
       }
     }
 
-    async function onScanBerhasil(decodedText) {
-      if (sedangMemproses) return;
-      sedangMemproses = true;
-      bunyiBeep(950, 120);
-
-      if (html5QrCode && html5QrCode.isScanning) {
-        html5QrCode.pause(true);
-      }
+    async function prosesScanPintuMasuk(decodedText) {
       document.getElementById('overlayLoading').classList.remove('hidden');
 
       const url = localStorage.getItem('gh_gas_url');
@@ -584,7 +755,6 @@
       let dataSiswa = null;
       let modeOfflineAktif = !navigator.onLine;
 
-      // 1. Jika Online, coba cek langsung ke server dengan batas waktu 4 detik
       if (!modeOfflineAktif) {
         try {
           const res = await panggilApiGas(url, { action: 'cek', pin: pin, qrText: token }, 4000);
@@ -596,12 +766,10 @@
             return;
           }
         } catch (err) {
-          // Timeout / sinyal gedung drop -> langsung beralih ke Cache Offline!
           modeOfflineAktif = true;
         }
       }
 
-      // 2. Fallback ke Cache Lokal jika Offline atau Timeout
       if (modeOfflineAktif) {
         dataSiswa = cekDariCacheLokal(token);
       }
@@ -616,7 +784,6 @@
 
       siswaAktif = dataSiswa;
 
-      // 3. Jika Mode Scan Kilat aktif dan siswa VALID
       if (isAuto && dataSiswa.status === 'VALID') {
         await eksekusiSimpanHadir(dataSiswa, 2, pos, true);
       } else {
@@ -643,11 +810,11 @@
           document.getElementById('overlayLoading').classList.add('hidden');
 
           if (resSimpan.sukses) {
-            // Update cache lokal juga
             const cache = getMasterCache();
             const idx = cache.findIndex(item => item.id_siswa === siswa.id_siswa);
             if (idx > -1) {
               cache[idx].status_hadir = 'HADIR';
+              cache[idx].jml_wali_hadir = jmlWali;
               setMasterCache(cache);
             }
             bunyiBeep(1200, 200);
@@ -664,7 +831,6 @@
         }
       }
 
-      // Simpan ke Antrean Offline jika internet putus/lambat
       if (tersimpanOffline) {
         simpanKeAntreanOffline(siswa, jmlWali, namaPos);
         bunyiBeep(1100, 200);
@@ -677,7 +843,10 @@
       const judul = document.getElementById('modalStatusJudul');
       const sub = document.getElementById('modalStatusSub');
       const blokWali = document.getElementById('blokPilihWali');
+
       document.getElementById('modalBodySiswa').classList.remove('hidden');
+      document.getElementById('blokInfoKursi').classList.remove('hidden');
+      document.getElementById('blokInfoKonsumsi').classList.add('hidden');
 
       document.getElementById('resFoto').src = data.url_foto;
       document.getElementById('resKelas').innerText = data.kelas;
@@ -755,7 +924,6 @@
       }
     }
 
-    // Fetch dengan batas waktu (timeout) agar tidak macet saat sinyal lambat
     async function panggilApiGas(url, payload, timeoutMs = 6000) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -771,6 +939,7 @@
         clearTimeout(timer);
       }
     }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
