@@ -610,12 +610,14 @@
             return;
           }
 
-          // Perbarui cache lokal
-          const cache = getMasterCache();
-          const idx = cache.findIndex(x => x.id_siswa === res.siswa.id_siswa);
-          if (idx > -1) {
-            cache[idx].status_konsumsi = res.info;
-            setMasterCache(cache);
+          // Perbarui cache lokal jika berhasil ambil
+          if (res.status === 'BERHASIL_AMBIL') {
+            const cache = getMasterCache();
+            const idx = cache.findIndex(x => x.id_siswa === res.siswa.id_siswa);
+            if (idx > -1) {
+              cache[idx].status_konsumsi = res.info;
+              setMasterCache(cache);
+            }
           }
 
           tampilkanModalKonsumsi(res.siswa, res.status, res.info, false);
@@ -633,6 +635,12 @@
         if (!s) {
           bunyiBeep(300, 350);
           tampilkanModalError('QR Code tidak ditemukan di database lokal!');
+          return;
+        }
+
+        // Cek wajib sudah HADIR di pintu masuk
+        if (String(s.status_hadir || '').toUpperCase() !== 'HADIR') {
+          tampilkanModalKonsumsi(s, 'BELUM_HADIR', 'Status lokal: BELUM PRESENSI MASUK', true);
           return;
         }
 
@@ -681,7 +689,12 @@
       document.getElementById('resPaketKonsumsi').innerText = `1 Wisudawan + ${jmlWali} Wali (Total ${1 + jmlWali} Paket)`;
       document.getElementById('resStatusKonsumsiDetail').innerText = infoDetail;
 
-      if (statusKonsumsi === 'SUDAH_AMBIL') {
+      if (statusKonsumsi === 'BELUM_HADIR') {
+        bunyiBeep(350, 350);
+        banner.className = 'bg-amber-600 text-white px-5 py-3.5 text-center';
+        judul.innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> BELUM PRESENSI MASUK!';
+        sub.innerText = 'Arahkan wisudawan untuk scan di Pintu Masuk terlebih dahulu';
+      } else if (statusKonsumsi === 'SUDAH_AMBIL') {
         bunyiBeep(350, 350);
         banner.className = 'bg-rose-600 text-white px-5 py-3.5 text-center';
         judul.innerHTML = '<i class="fa-solid fa-ban mr-1"></i> KONSUMSI SUDAH DIAMBIL!';
@@ -737,6 +750,7 @@
       const idx = cache.findIndex(item => item.id_siswa === siswa.id_siswa);
       if (idx > -1) {
         cache[idx].status_hadir = 'HADIR';
+        cache[idx].jml_wali_hadir = jmlWali;
         cache[idx].waktu_presensi = jamLokal;
         cache[idx].petugas_scan = namaPos + ' (Offline)';
         setMasterCache(cache);
